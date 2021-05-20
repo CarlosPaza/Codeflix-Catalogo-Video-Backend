@@ -9,5 +9,6 @@ class DatabaseSeeder extends Seeder
         // $this->call(UsersTableSeeder::class);
         $this->call(CategoriesTableSeeder::class);
         $this->call(GenresTableSeeder::class);
+        $this->call(CastMemberSeeder::class);
     }
 }
