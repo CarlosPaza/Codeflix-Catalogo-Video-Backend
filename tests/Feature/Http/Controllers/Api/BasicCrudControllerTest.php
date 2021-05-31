@@ -41,6 +41,7 @@ class BasicCrudControllerTest extends TestCase
     public function testInvalidationDataInStore()
     {
         $this->expectException(ValidationException::class);
+        /** @var Request $request */
         $request = \Mockery::mock(Request::class);
         $request
             ->shouldReceive('all')
@@ -51,6 +52,7 @@ class BasicCrudControllerTest extends TestCase
 
     public function testStore()
     {
+        /** @var Request $request */
         $request = \Mockery::mock(Request::class);
         $request
             ->shouldReceive('all')
@@ -97,6 +99,7 @@ class BasicCrudControllerTest extends TestCase
     public function testUpdate()
     {
         $category = CategoryStub::create(['name' => 'test_name', 'description' => 'test_description']);
+        /** @var Request $request */
         $request = \Mockery::mock(Request::class);
         $request
             ->shouldReceive('all')

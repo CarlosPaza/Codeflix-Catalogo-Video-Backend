@@ -16,4 +16,9 @@ class Genre extends Model
     protected $casts = [
         'is_active' => 'boolean'
     ];
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class);
+    }
 }
