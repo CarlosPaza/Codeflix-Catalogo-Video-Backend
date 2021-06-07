@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\Models\Video;
 
+use App\Models\Category;
+use App\Models\Genre;
 use App\Models\Video;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Tests\Exceptions\TestException;
 use Tests\TestCase;
 
-class VideoCrudTest extends TestCase
+class VideoTest extends TestCase
 {
     use DatabaseMigrations;
 
@@ -41,6 +42,7 @@ class VideoCrudTest extends TestCase
             'opened',
             'rating',
             'duration',
+            'video_file',
             "deleted_at",
             "created_at",
             "updated_at"
