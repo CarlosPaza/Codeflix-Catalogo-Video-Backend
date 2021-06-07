@@ -79,6 +79,14 @@ class GenreControllerTest extends TestCase
         ];
         $this->assertInvalidationInStoreAction($data, 'exists');
         $this->assertInvalidationInUpdateAction($data, 'exists');
+
+        $category = factory(Category::class)->create();
+        $category->delete();
+        $data = [
+            'categories_id' => [$category->id],
+        ];
+        $this->assertInvalidationInStoreAction($data, 'exists');
+        $this->assertInvalidationInUpdateAction($data, 'exists');
     }
 
     public function testSave()
@@ -148,11 +156,14 @@ class GenreControllerTest extends TestCase
             ->once()
             ->andThrow(new TestException());
 
+        $hasError = false;
         try {
             $controller->store($request);
         } catch (TestException $exception) {
             $this->assertCount(1, Genre::all());
+            $hasError = true;
         }
+        $this->assertTrue($hasError);
     }
 
     public function testRollBackUpdate()
@@ -189,11 +200,43 @@ class GenreControllerTest extends TestCase
         /** @var Request $request */
         $request = \Mockery::mock(Request::class);
 
+        $hasError = false;
         try {
             $controller->update($request, 1);
         } catch (TestException $exception) {
             $this->assertCount(1, Genre::all());
+            $hasError = true;
         }
+        $this->assertTrue($hasError);
+    }
+
+    public function testSyncCategories()
+    {
+        $categoriesId = factory(Category::class, 3)->create()->pluck('id')->toArray();
+
+        $sendData = [
+            'name' => 'test',
+            'categories_id'   => [$categoriesId[0]]
+        ];
+
+        $response = $this->json('POST', $this->routeStore(), $sendData);
+
+        $this->assertHasCategory($response->json('id'), $categoriesId[0]);
+
+        $sendData = [
+            'name' => 'test',
+            'categories_id'   => [$categoriesId[1], $categoriesId[2]]
+        ];
+
+        $response = $this->json(
+            'PUT',
+            route('genres.update', ['genre' => $response->json('id')]),
+            $sendData
+        );
+
+        $this->assertDatabaseMissingHasCategory($response->json('id'), $categoriesId[0]);
+        $this->assertHasCategory($response->json('id'), $categoriesId[1]);
+        $this->assertHasCategory($response->json('id'), $categoriesId[2]);
     }
 
     public function testDeleteJson()
@@ -217,6 +260,11 @@ class GenreControllerTest extends TestCase
     protected function assertHasCategory($genreId, $categoryId)
     {
         $this->assertDatabaseHas('category_genre', ['genre_id' => $genreId, 'category_id' => $categoryId]);
+    }
+
+    public function assertDatabaseMissingHasCategory($genreId, $categoryId)
+    {
+        $this->assertDatabaseMissing('category_genre', ['genre_id' => $genreId, 'category_id' => $categoryId]);
     }
 
     protected function routeStore()
