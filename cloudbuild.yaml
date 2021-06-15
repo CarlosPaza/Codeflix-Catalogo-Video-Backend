@@ -1,8 +1,26 @@
 steps:
 
+- id: 'Gerando code-micro-videos-backend-1069d3f82f66.json'
+  name: 'gcr.io/cloud-builders/gcloud'
+  args:
+    - kms
+    - decrypt
+    - --ciphertext-file=./storage/credentials/google/code-micro-videos-backend-1069d3f82f66.json.enc
+    - --plaintext-file=./storage/credentials/google/code-micro-videos-backend-1069d3f82f66.json
+    - --location=global
+    - --keyring=testing-lesson
+    - --key=service-account
+    - --project=$PROJECT_ID
+
 - id: 'Rodando-docker-compose'
   name: 'docker/compose'
   args: ['-f','docker-compose.prod.yaml','up','-d']
+  env:
+      - GOOGLE_CLOUD_PROJECT_ID=$PROJECT_ID
+      - GOOGLE_CLOUD_KEY_FILE=code-micro-videos-backend-1069d3f82f66.json
+      - GOOGLE_CLOUD_STORAGE_BUCKET=code-micro-videos-paza
+      - GOOGLE_CLOUD_STORAGE_API_URI=https://storage.googleapis.com/code-micro-videos-paza
+      - TESTING_PROD=true
 
 - id: 'Chown in /var/www'
   name: 'gcr.io/cloud-builders/docker'

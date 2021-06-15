@@ -11,7 +11,10 @@ class Video extends Model
     use SoftDeletes, Traits\Uuid, UploadFiles;
 
     const RATING_LIST = ['L', '10', '12', '14', '16', '18'];
-    const VIDEO_FILE_MAX_SIZE = 1024 * 50;
+    const THUMB_FILE_MAX_SIZE = 1024 * 5; 
+    const BANNER_FILE_MAX_SIZE = 1024 * 10;
+    const TRAILER_FILE_MAX_SIZE = 1024 * 1024;
+    const VIDEO_FILE_MAX_SIZE = 1024 * 1024 * 50;
 
     protected $fillable = [
         'title',
@@ -31,7 +34,10 @@ class Video extends Model
     public $incrementing = false;
 
     public static $fileFields = [
-        'video_file'
+        'video_file',
+        'thumb_file',
+        'trailer_file',
+        'banner_file'
     ];
 
     public static function create(array $attributes = [])
@@ -47,7 +53,7 @@ class Video extends Model
             return $obj;
         } catch (\Exception $e) {
             if (isset($obj)) {
-                // excluir os arquivos de uploads
+                $obj->deleteFiles($files);
             }
             \DB::rollBack();
             throw $e;
@@ -56,18 +62,21 @@ class Video extends Model
 
     public function update(array $attributes = [], array $options = [])
     {
+        $files = self::extractFiles($attributes);
         try {
             \DB::beginTransaction();
             $saved = parent::update($attributes, $options);
             static::handleRelations($this, $attributes);
             if ($saved) {
-                // faz o upload
-                // excluir os antigos
+                $this->uploadFiles($files);
             }
             \DB::commit();
+            if($saved && count($files)) {
+                $this->deleteOldFiles();
+            }
             return $saved;
         } catch (\Exception $e) {
-            // excluir os arquivos de uploads
+            $this->deleteFiles($files);
             \DB::rollBack();
             throw $e;
         }
