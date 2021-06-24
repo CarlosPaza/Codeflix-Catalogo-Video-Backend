@@ -22,11 +22,15 @@ class Video extends Model
         'year_launched',
         'opened',
         'rating',
-        'duration'
+        'duration',
+        'video_file',
+        'thumb_file',
+        'banner_file',
+        'trailer_file'
     ];
     protected $dates = ['deleted_at'];
+    protected $keyType = 'string';
     protected $casts = [
-        'id' => 'string',
         'opened' => 'boolean',
         'year_launched' => 'integer',
         'duration' => 'integer'
@@ -105,5 +109,25 @@ class Video extends Model
     protected function uploadDir()
     {
         return $this->id;
+    }
+
+    public function getThumbFileUrlAttribute()
+    {
+        return $this->thumb_file ? $this->getFileUrl($this->thumb_file) : null;
+    }
+
+    public function getBannerFileUrlAttribute()
+    {
+        return $this->banner_file ? $this->getFileUrl($this->banner_file) : null;
+    }
+
+    public function getTrailerFileUrlAttribute()
+    {
+        return $this->trailer_file ? $this->getFileUrl($this->trailer_file) : null;
+    }
+
+    public function getVideoFileUrlAttribute()
+    {
+        return $this->video_file ? $this->getFileUrl($this->video_file) : null;
     }
 }

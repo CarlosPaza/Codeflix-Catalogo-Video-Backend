@@ -41,7 +41,12 @@ class VideoUnitTest extends TestCase
             'year_launched',
             'opened',
             'rating',
-            'duration'
+            'duration',
+            'video_file',
+            'thumb_file',
+            'banner_file',
+            'trailer_file'
+            
         ];
         $this->assertEquals($fillable, $this->video->getFillable());
     }
@@ -55,7 +60,6 @@ class VideoUnitTest extends TestCase
     public function testCastsAttribute()
     {
         $casts = [
-            'id' => 'string',
             'opened' => 'boolean',
             'year_launched' => 'integer',
             'duration' => 'integer'
