@@ -2,7 +2,7 @@ import * as React from 'react';
 import MUIDataTable, { MUIDataTableColumn } from "mui-datatables";
 import { useEffect } from 'react';
 import { useState } from 'react';
-import { httpVideo } from '../../util/http';
+import castMemberHttp from '../../util/http/cast-member-http';
 import format from "date-fns/format";
 import parseISO from "date-fns/parseISO";
 
@@ -36,14 +36,19 @@ const columnsDefinition: MUIDataTableColumn[] = [
     }
 ];
 
+interface CastMember {
+    id: string;
+    name: string;
+}
+
 const Table = () => {
 
-    const [data, setData] = useState([]);
+    const [data, setData] = useState<CastMember[]>([]);
 
     useEffect(() => {
-        httpVideo.get('cast_members').then(
-            response => setData(response.data.data)
-        )
+        castMemberHttp
+            .list<{ data: CastMember[] }>()
+            .then(({data}) => setData(data.data));
     }, []);
 
     return (
