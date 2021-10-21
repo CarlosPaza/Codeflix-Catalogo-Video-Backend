@@ -1,5 +1,4 @@
-import { ButtonProps } from '@material-ui/core/Button';
-import { Box, Button, Checkbox, FormControlLabel, makeStyles, TextField, Theme } from '@material-ui/core';
+import { Checkbox, FormControlLabel, TextField } from '@material-ui/core';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import categoryHttp from '../../util/http/category-http';
@@ -9,14 +8,9 @@ import { useHistory, useParams } from 'react-router';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
-
-const useStyles = makeStyles((theme: Theme) => {
-    return {
-        submit: {
-            margin: theme.spacing(1)
-        }
-    }
-});
+import { Category } from '../../util/models';
+import SubmitActions from '../../components/SubmitActions';
+import { DefaultForm } from '../../components/DefaultForm';
 
 const validationSchema = yup.object().shape({
     name: yup.string()
@@ -27,9 +21,7 @@ const validationSchema = yup.object().shape({
 
 export const Form = () => {
 
-    const classes = useStyles();
-
-    const { handleSubmit, getValues, formState: { errors }, control, reset, watch} = useForm<{name, description, is_active}>({
+    const { handleSubmit, getValues, formState: { errors }, control, reset, watch, trigger} = useForm<{name, description, is_active}>({
         resolver: yupResolver(validationSchema),
         defaultValues: {
             is_active: true
@@ -39,64 +31,66 @@ export const Form = () => {
     const snackbar = useSnackbar();
     const history = useHistory();
     const {id} : any = useParams();
-    const [category, setCategory] = useState<{id: string} | null>(null);
+    const [category, setCategory] = useState<Category | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-
-    const buttonProps: ButtonProps = {
-        className: classes.submit,
-        color: "secondary",
-        variant: "contained",
-        disabled: loading
-    };
 
     useEffect(() => {
         if (!id) {
             return;
         }
-        setLoading(true);
-        categoryHttp
-            .get(id)
-            .then(({data}) => {
-                setCategory(data.data)
-                reset(data.data)
-            })
-            .finally(() => setLoading(false))
+        
+        (async function getCategory() {
+            setLoading(true);
+            try {
+                const {data} = await categoryHttp.get(id);
+                setCategory(data.data);
+                reset(data.data);
+            } catch (error) {
+                console.error(error);
+                snackbar.enqueueSnackbar(
+                    'Não foi possível carregar as informações',
+                    {variant: 'error',}
+                )
+            } finally {
+                setLoading(false);
+            }
+        })();
+
     }, []);
 
-    function onSubmit(formData, event) {
+    async function onSubmit(formData, event) {
         setLoading(true);
-        const http = !category
-            ? categoryHttp.create(formData)
-            : categoryHttp.update(category.id, formData)
-            
-            http
-                .then(({data}) => {
-                    snackbar.enqueueSnackbar(
-                        'Categoria salva com sucesso',
-                        {variant: 'success'}
-                    );
-                    setTimeout(() => {
-                        event
-                            ? (
-                                id
-                                    ? history.replace(`/categories/${data.data.id}/edit`)
-                                    : history.push(`/categories/${data.data.id}/edit`)
-                            )
-                            : history.push('/categories')
-                    });
-                })
-                .catch((error) => {
-                    console.log(error);
-                    snackbar.enqueueSnackbar(
-                        'Não foi possível salvar a categoria',
-                        {variant: 'error'}
+        try {
+            const http = !category
+                ? categoryHttp.create(formData)
+                : categoryHttp.update(category.id, formData);
+            const {data} = await http;
+            snackbar.enqueueSnackbar(
+                'Categoria salva com sucesso',
+                {variant: 'success'}
+            );
+            setTimeout(() => {
+                event
+                    ? (
+                        id
+                            ? history.replace(`/categories/${data.data.id}/edit`)
+                            : history.push(`/categories/${data.data.id}/edit`)
                     )
-                })
-                .finally(() => setLoading(false));
+                    : history.push('/categories')
+            });
+        } catch (error) {
+            console.error(error);
+            snackbar.enqueueSnackbar(
+                'Não foi possível salvar a categoria',
+                {variant: 'error'}
+            )
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <DefaultForm GridItemProps={{xs: 12, md: 6}} onSubmit={handleSubmit(onSubmit)}>
             <Controller
                 name="name"
                 control={control}
@@ -148,10 +142,14 @@ export const Form = () => {
                 label={'Ativo?'}
                 labelPlacement={'end'}
             />
-            <Box dir={"rtl"}>
-                <Button {...buttonProps} onClick={() => onSubmit(getValues(), null)}>Salvar</Button>
-                <Button {...buttonProps} type="submit">Salvar e continuar editando</Button>
-            </Box>
-        </form>
+            <SubmitActions 
+                disabledButtons={loading} 
+                handleSave={
+                    () =>
+                    trigger().then(isValid => {
+                        isValid && onSubmit(getValues(), null)
+                    })
+                } />
+        </DefaultForm>
     );
 };

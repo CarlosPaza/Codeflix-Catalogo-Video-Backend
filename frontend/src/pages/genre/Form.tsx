@@ -9,6 +9,7 @@ import * as yup from '../../util/vendor/yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useHistory, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
+import { Category, Genre } from '../../util/models';
 
 const useStyles = makeStyles((theme: Theme) => {
     return {
@@ -34,9 +35,9 @@ export const Form = () => {
     const snackbar = useSnackbar();
     const history = useHistory();
     const {id} : any = useParams();
-    const [genre, setGenre] = useState<{id: string} | null>(null);
+    const [genre, setGenre] = useState<Genre | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const [categories, setCategories] = useState<any[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const {handleSubmit, getValues, formState: { errors }, watch, setValue, reset, control} = useForm<{name, categories_id}>({
         resolver: yupResolver(validationSchema),
         defaultValues: {
@@ -52,24 +53,40 @@ export const Form = () => {
     };
 
     useEffect(() => {
-        if (!id) {
-            return;
+        let isSubscribed = true;
+        (async () => {
+            setLoading(true);
+            const promises = [categoryHttp.list({queryParams: {all: ''}})];
+            if (id) {
+                promises.push(genreHttp.get(id));
+            }
+            try {
+                const [categoriesResponse, genreResponse] = await Promise.all(promises);
+                if (isSubscribed) {
+                    setCategories(categoriesResponse.data.data);
+                    if (id) {
+                        setGenre(genreResponse.data.data);
+                        const categories_id = genreResponse.data.data.categories.map(category => category.id);
+                        reset({
+                            ...genreResponse.data.data,
+                            categories_id
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                snackbar.enqueueSnackbar(
+                    'Não foi possível carregar as informações',
+                    {variant: 'error',}
+                )
+            } finally {
+                setLoading(false);
+            }
+        })();
+        
+        return () => {
+            isSubscribed = false;
         }
-        setLoading(true);
-        genreHttp
-            .get(id)
-            .then(({data}) => {
-                setGenre(data.data)
-                const categories_id = data.data.categories.map(category => category.id);
-                reset({...data.data, categories_id})
-            })
-            .finally(() => setLoading(false))
-    }, []);
-
-    useEffect(() => {
-        categoryHttp
-            .list()
-            .then(({data}) => setCategories(data.data));
     }, []);
 
     function onSubmit(formData, event) {

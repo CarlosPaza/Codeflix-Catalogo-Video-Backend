@@ -9,6 +9,7 @@ import { useHistory, useParams } from 'react-router';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { CastMember } from '../../util/models';
 
 const useStyles = makeStyles((theme: Theme) => {
     return {
@@ -39,7 +40,7 @@ export const Form = () => {
     const snackbar = useSnackbar();
     const history = useHistory();
     const {id} : any = useParams();
-    const [castMember, setCastMember] = useState<{id: string} | null>(null);
+    const [castMember, setCastMember] = useState<CastMember | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
 
     const buttonProps: ButtonProps = {
