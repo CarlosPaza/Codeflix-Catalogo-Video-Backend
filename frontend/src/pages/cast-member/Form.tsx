@@ -1,23 +1,15 @@
-import { ButtonProps } from '@material-ui/core/Button';
-import { Box, Button, FormControl, FormControlLabel, FormLabel, makeStyles, Radio, RadioGroup, TextField, Theme, FormHelperText } from '@material-ui/core';
+import { FormControl, FormControlLabel, FormLabel, Radio, RadioGroup, TextField, FormHelperText } from '@material-ui/core';
 import * as React from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import castMemberHttp from '../../util/http/cast-member-http';
 import * as yup from '../../util/vendor/yup';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useHistory, useParams } from 'react-router';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { CastMember } from '../../util/models';
-
-const useStyles = makeStyles((theme: Theme) => {
-    return {
-        submit: {
-            margin: theme.spacing(1)
-        }
-    }
-});
+import { DefaultForm } from '../../components/DefaultForm';
+import SubmitActions from '../../components/SubmitActions';
 
 const validationSchema = yup.object().shape({
     name: yup.string()
@@ -31,10 +23,17 @@ const validationSchema = yup.object().shape({
 
 export const Form = () => {
 
-    const classes = useStyles();
-
-    const { handleSubmit, getValues, setValue, formState: { errors }, control, reset, watch} = useForm({
-        resolver: yupResolver(validationSchema)
+    const {
+        register,
+        handleSubmit,
+        getValues,
+        setValue,
+        errors,
+        reset,
+        watch,
+        triggerValidation
+    } = useForm<{name, type}>({
+        validationSchema,
     });
 
     const snackbar = useSnackbar();
@@ -42,13 +41,6 @@ export const Form = () => {
     const {id} : any = useParams();
     const [castMember, setCastMember] = useState<CastMember | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-
-    const buttonProps: ButtonProps = {
-        className: classes.submit,
-        color: "secondary",
-        variant: "contained",
-        disabled: loading
-    };
 
     useEffect(() => {
         if (!id) {
@@ -63,6 +55,10 @@ export const Form = () => {
             })
             .finally(() => setLoading(false))
     }, []);
+
+    useEffect(() => {
+        register({name: "type"})
+    }, [register]);
 
     function onSubmit(formData, event) {
         setLoading(true);
@@ -97,35 +93,31 @@ export const Form = () => {
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <Controller
+        <DefaultForm GridItemProps={{xs: 12, md: 6}} onSubmit={handleSubmit(onSubmit)}>
+            <TextField
                 name="name"
-                control={control}
-                render={({ field }) => (
-                <TextField
-                    label="Nome"
-                    fullWidth
-                    variant={"outlined"}
-                    disabled={loading}
-                    error={errors.name !== undefined}
-                    helperText={errors.name && errors.name.message}
-                    InputLabelProps={{shrink: true}}
-                    {...field}
-                />
-                )}
+                label="Nome"
+                fullWidth
+                variant={"outlined"}
+                inputRef={register}
+                disabled={loading}
+                error={errors.name !== undefined}
+                helperText={errors.name && errors.name.message}
+                InputLabelProps={{shrink: true}}
             />
-            
-           <FormControl 
+            <FormControl
                 margin={"normal"}
                 error={errors.type !== undefined}
-                disabled={loading}>
+                disabled={loading}
+            >
                 <FormLabel component="legend">Tipo</FormLabel>
                 <RadioGroup
                     name="type"
                     onChange={(e) => {
                         setValue('type', parseInt(e.target.value));
                     }}
-                    value={watch('type') + ""}>
+                    value={watch('type') + ""}
+                >
                     <FormControlLabel value="1" control={<Radio color={"primary"}/>} label="Diretor"/>
                     <FormControlLabel value="2" control={<Radio color={"primary"}/>} label="Ator"/>
                 </RadioGroup>
@@ -133,10 +125,14 @@ export const Form = () => {
                     errors.type && <FormHelperText id="type-helper-text">{errors.type.message}</FormHelperText>
                 }
             </FormControl>
-            <Box dir={"rtl"}>
-                <Button {...buttonProps} onClick={() => onSubmit(getValues(), null)}>Salvar</Button>
-                <Button {...buttonProps} type="submit"> Salvar e continuar editando</Button>
-            </Box>
-        </form>
+            <SubmitActions
+                disabledButtons={loading}
+                handleSave={() =>
+                    triggerValidation().then(isValid => {
+                        isValid && onSubmit(getValues(), null)
+                    })
+                }
+            />
+        </DefaultForm>
     );
 };

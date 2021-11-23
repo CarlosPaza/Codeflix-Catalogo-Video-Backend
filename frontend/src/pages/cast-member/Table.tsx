@@ -145,6 +145,11 @@ const Table = () => {
     (columnType.options as any).filterList = typeFilterValue
         ? [typeFilterValue]
         : [];
+    
+    const serverSideFilterList = columns.map((column) => []);
+    if (typeFilterValue) {
+        serverSideFilterList[indexColumnType] = [typeFilterValue];
+    }
 
     useEffect(() => {
         subscribed.current = true;
@@ -166,11 +171,11 @@ const Table = () => {
         try {
             const {data} = await castMemberHttp.list<ListResponse<CastMember>>({
                 queryParams: {
-                    search: filterManager.cleanSearchText(filterState.search),
-                    page: filterState.pagination.page,
-                    per_page: filterState.pagination.per_page,
-                    sort: filterState.order.sort,
-                    dir: filterState.order.dir,
+                    search: filterManager.cleanSearchText(debouncedFilterState.search),
+                    page: debouncedFilterState.pagination.page,
+                    per_page: debouncedFilterState.pagination.per_page,
+                    sort: debouncedFilterState.order.sort,
+                    dir: debouncedFilterState.order.dir,
                     ...(
                         debouncedFilterState.extraFilter &&
                         debouncedFilterState.extraFilter.type && {
@@ -207,31 +212,27 @@ const Table = () => {
                 debouncedSearchTime={debouncedSearchTime}
                 ref={tableRef}
                 options={{
+                    serverSideFilterList,
                     serverSide: true,
-                    responsive: "standard",
+                    responsive: "scrollMaxHeight",
                     searchText: filterState.search as any,
                     page: filterState.pagination.page - 1,
                     rowsPerPage: filterState.pagination.per_page,
                     rowsPerPageOptions,
                     count: totalRecords,
-                    onFilterChange: (column, filterList) => {
+                    onFilterChange: (column, filterList, type) => {
                         const columnIndex = columns.findIndex((c) => c.name === column);
                         filterManager.changeExtraFilter({
-                            [column as any]: filterList[columnIndex].length
+                            [column]: columnIndex > 0 && filterList[columnIndex].length
                                 ? filterList[columnIndex][0]
                                 : null
                         });
                     },
                     customToolbar: () => (
                         <FilterResetButton
-                            handleClick={() => filterManager.resetFilter()}
+                          handleClick={() => filterManager.resetFilter()}
                         />
                     ),
-                    sortOrder: {
-                        direction: filterState.order.dir.includes('desc') ? 'desc' : 'asc',
-                        name: filterState.order.sort
-                    
-                    },
                     onSearchChange: (value) => filterManager.changeSearch(value),
                     onChangePage: (page) => filterManager.changePage(page),
                     onChangeRowsPerPage: (perPage) =>

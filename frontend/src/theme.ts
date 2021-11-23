@@ -1,6 +1,6 @@
-import { createTheme } from "@material-ui/core";
-import { green, red } from "@material-ui/core/colors";
-import { PaletteOptions, SimplePaletteColorOptions } from "@material-ui/core/styles/createPalette";
+import {createMuiTheme} from "@material-ui/core";
+import {PaletteOptions, SimplePaletteColorOptions} from "@material-ui/core/styles/createPalette";
+import {green, red} from "@material-ui/core/colors";
 
 const palette: PaletteOptions = {
     primary: {
@@ -21,10 +21,10 @@ const palette: PaletteOptions = {
     },
     error: {
         main: red["500"]
-    }
+    },
 };
 
-const theme = createTheme({
+const theme = createMuiTheme({
     palette,
     overrides: {
         MUIDataTable: {
@@ -58,9 +58,6 @@ const theme = createTheme({
                 color: '#ffffff',
                 '&[aria-sort]':{
                     backgroundColor: '#459ac4',
-                },
-                '& button': {
-                    color: '#fff'
                 }
             },
             sortActive: {

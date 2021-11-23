@@ -1,23 +1,15 @@
-import { ButtonProps } from '@material-ui/core/Button';
-import { Box, Button, makeStyles, MenuItem, TextField, Theme } from '@material-ui/core';
+import { MenuItem, TextField } from '@material-ui/core';
 import * as React from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import categoryHttp from "../../util/http/category-http";
 import genreHttp from '../../util/http/genre-http';
 import { useEffect, useState } from 'react';
 import * as yup from '../../util/vendor/yup';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useHistory, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { Category, Genre } from '../../util/models';
-
-const useStyles = makeStyles((theme: Theme) => {
-    return {
-        submit: {
-            margin: theme.spacing(1)
-        }
-    }
-});
+import { DefaultForm } from '../../components/DefaultForm';
+import SubmitActions from '../../components/SubmitActions';
 
 const validationSchema = yup.object().shape({
     name: yup.string()
@@ -31,26 +23,18 @@ const validationSchema = yup.object().shape({
 
 export const Form = () => {
 
-    const classes = useStyles();
     const snackbar = useSnackbar();
     const history = useHistory();
     const {id} : any = useParams();
     const [genre, setGenre] = useState<Genre | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [categories, setCategories] = useState<Category[]>([]);
-    const {handleSubmit, getValues, formState: { errors }, watch, setValue, reset, control} = useForm<{name, categories_id}>({
-        resolver: yupResolver(validationSchema),
+    const {register, handleSubmit, getValues, errors, watch, setValue, reset, triggerValidation} = useForm<{name, categories_id}>({
+        validationSchema,
         defaultValues: {
             categories_id: []
         }
     });
-
-    const buttonProps: ButtonProps = {
-        className: classes.submit,
-        color: "secondary",
-        variant: "contained",
-        disabled: loading
-    };
 
     useEffect(() => {
         let isSubscribed = true;
@@ -89,6 +73,10 @@ export const Form = () => {
         }
     }, []);
 
+    useEffect(() => {
+        register({name: "categories_id"})
+    }, [register]);
+
     function onSubmit(formData, event) {
         setLoading(true);
         const http = !genre
@@ -122,22 +110,17 @@ export const Form = () => {
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <Controller
+        <DefaultForm GridItemProps={{xs: 12, md: 6}} onSubmit={handleSubmit(onSubmit)}>
+            <TextField
                 name="name"
-                control={control}
-                render={({ field }) => (
-                <TextField
-                    label="Nome"
-                    fullWidth
-                    variant="outlined"
-                    disabled={loading}
-                    error={errors.name !== undefined}
-                    helperText={errors.name && errors.name.message}
-                    InputLabelProps={{shrink: true}}
-                    {...field}
-                />
-                )}
+                label="Nome"
+                fullWidth
+                variant={"outlined"}
+                inputRef={register}
+                disabled={loading}
+                error={errors.name !== undefined}
+                helperText={errors.name && errors.name.message}
+                InputLabelProps={{shrink: true}}
             />
             <TextField
                 select
@@ -169,10 +152,14 @@ export const Form = () => {
                     )
                 }
             </TextField>
-            <Box dir={"rtl"}>
-                <Button {...buttonProps} onClick={() => onSubmit(getValues(), null)}>Salvar</Button>
-                <Button {...buttonProps} type="submit">Salvar e continuar editando</Button>
-            </Box>
-        </form>
+            <SubmitActions
+                disabledButtons={loading}
+                handleSave={() =>
+                    triggerValidation().then(isValid => {
+                        isValid && onSubmit(getValues(), null)
+                    })
+                }
+            />
+        </DefaultForm>
     );
 };

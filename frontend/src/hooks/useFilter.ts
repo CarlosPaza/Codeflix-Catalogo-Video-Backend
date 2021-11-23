@@ -178,14 +178,14 @@ export class FilterManager {
     getStateFromURL() {
       const queryParams = new URLSearchParams(this.history.location.search.substr(1))
       return this.schema.cast({
-        search: queryParams.get('serach'),
+        search: queryParams.get('search'),
         pagination: {
           page: queryParams.get('page'),
           per_page: queryParams.get('per_page'),
         },
         order: {
           sort: queryParams.get('sort'),
-          dir: queryParams.get('dir') ?? 'desc',
+          dir: queryParams.get('dir'),
         },
         ...(this.extraFilter && {
                 extraFilter: this.extraFilter.getStateFromURL(queryParams)

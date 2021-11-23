@@ -1,9 +1,8 @@
 import { Checkbox, FormControlLabel, TextField } from '@material-ui/core';
 import * as React from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import categoryHttp from '../../util/http/category-http';
 import * as yup from '../../util/vendor/yup';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useHistory, useParams } from 'react-router';
 import { useEffect } from 'react';
 import { useState } from 'react';
@@ -21,8 +20,16 @@ const validationSchema = yup.object().shape({
 
 export const Form = () => {
 
-    const { handleSubmit, getValues, formState: { errors }, control, reset, watch, trigger} = useForm<{name, description, is_active}>({
-        resolver: yupResolver(validationSchema),
+    const { register,
+        handleSubmit,
+        getValues,
+        setValue,
+        errors,
+        reset,
+        watch,
+        triggerValidation
+    } = useForm<{name, is_active}>({
+        validationSchema,
         defaultValues: {
             is_active: true
         }
@@ -58,6 +65,10 @@ export const Form = () => {
 
     }, []);
 
+    useEffect(() => {
+        register({name: "is_active"})
+    }, [register]);
+
     async function onSubmit(formData, event) {
         setLoading(true);
         try {
@@ -91,52 +102,39 @@ export const Form = () => {
 
     return (
         <DefaultForm GridItemProps={{xs: 12, md: 6}} onSubmit={handleSubmit(onSubmit)}>
-            <Controller
+            <TextField
                 name="name"
-                control={control}
-                render={({ field }) => (
-                <TextField
-                    label="Nome"
-                    fullWidth
-                    variant="outlined"
-                    disabled={loading}
-                    error={errors.name !== undefined}
-                    helperText={errors.name && errors.name.message}
-                    InputLabelProps={{shrink: true}}
-                    {...field}
-                />
-                )}
+                label="Nome"
+                fullWidth
+                variant={"outlined"}
+                inputRef={register}
+                disabled={loading}
+                error={errors.name !== undefined}
+                helperText={errors.name && errors.name.message}
+                InputLabelProps={{shrink: true}}
             />
-            <Controller
+            <TextField
                 name="description"
-                control={control}
-                render={({ field }) => (
-                <TextField
-                    label="Descrição"
-                    multiline
-                    rows="4"
-                    fullWidth
-                    variant={"outlined"}
-                    margin={"normal"}
-                    disabled={loading}
-                    InputLabelProps={{shrink: true}}
-                    {...field}
-                />
-                )}
+                label="Descrição"
+                multiline
+                rows="4"
+                fullWidth
+                variant={"outlined"}
+                margin={"normal"}
+                inputRef={register}
+                disabled={loading}
+                InputLabelProps={{shrink: true}}
             />
             <FormControlLabel
                 disabled={loading}
                 control={
-                    <Controller
+                    <Checkbox
                         name="is_active"
-                        control={control}
-                        render={({ field }) => (
-                        <Checkbox
-                            color={'primary'}
-                            checked={watch('is_active')}
-                            {...field}
-                        />
-                        )}
+                        color={"primary"}
+                        onChange={
+                            () => setValue('is_active', !getValues()['is_active'])
+                        }
+                        checked={watch('is_active')}
                     />
                 }
                 label={'Ativo?'}
@@ -146,7 +144,7 @@ export const Form = () => {
                 disabledButtons={loading} 
                 handleSave={
                     () =>
-                    trigger().then(isValid => {
+                    triggerValidation().then(isValid => {
                         isValid && onSubmit(getValues(), null)
                     })
                 } />

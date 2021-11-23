@@ -6,8 +6,8 @@ export interface Pagination {
 }
 
 export interface Order {
-    sort: string;
-    dir: string;
+    sort: string | null;
+    dir: string | null;
 }
 
 export interface State {

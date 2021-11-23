@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\ModelFilters\VideoFilter;
 use App\Models\Traits\UploadFiles;
+use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Video extends Model
 {
-    use SoftDeletes, Traits\Uuid, UploadFiles;
+    use SoftDeletes, Traits\Uuid, UploadFiles, Filterable;
 
     const RATING_LIST = ['L', '10', '12', '14', '16', '18'];
     const THUMB_FILE_MAX_SIZE = 1024 * 5; 
@@ -86,13 +88,16 @@ class Video extends Model
         }
     }
 
-    public static function handleRelations($obj, array $attributes)
+    public static function handleRelations(Video $video, array $attributes)
     {
         if (isset($attributes["categories_id"])) {
-            $obj->categories()->sync($attributes["categories_id"]);
+            $video->categories()->sync($attributes["categories_id"]);
         }
         if (isset($attributes["genres_id"])) {
-            $obj->genres()->sync($attributes["genres_id"]);
+            $video->genres()->sync($attributes["genres_id"]);
+        }
+        if (isset($attributes['cast_members_id'])) {
+            $video->castMembers()->sync($attributes['cast_members_id']);
         }
     }
 
@@ -104,6 +109,11 @@ class Video extends Model
     public function genres()
     {
         return $this->belongsToMany(Genre::class)->withTrashed();
+    }
+
+    public function castMembers()
+    {
+        return $this->belongsToMany(CastMember::class)->withTrashed();
     }
 
     protected function uploadDir()
@@ -129,5 +139,10 @@ class Video extends Model
     public function getVideoFileUrlAttribute()
     {
         return $this->video_file ? $this->getFileUrl($this->video_file) : null;
+    }
+
+    public function modelFilter()
+    {
+        return $this->provideFilter(VideoFilter::class);
     }
 }

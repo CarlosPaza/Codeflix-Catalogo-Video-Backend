@@ -94,7 +94,6 @@ const Table = () => {
         filterManager,
         filterState,
         debouncedFilterState,
-        dispatch,
         totalRecords,
         setTotalRecords
     } = useFilter({
@@ -159,7 +158,7 @@ const Table = () => {
                 debouncedSearchTime={debouncedSearchTime}
                 options={{
                     serverSide: true,
-                    responsive: "standard",
+                    responsive: "scrollMaxHeight",
                     searchText: filterState.search as any,
                     page: filterState.pagination.page - 1,
                     rowsPerPage: filterState.pagination.per_page,
@@ -170,11 +169,6 @@ const Table = () => {
                           handleClick={() => filterManager.resetFilter()}
                         />
                     ),
-                    sortOrder: {
-                        direction: filterState.order.dir.includes('desc') ? 'desc' : 'asc',
-                        name: filterState.order.sort
-                    
-                    },
                     onSearchChange: (value) => filterManager.changeSearch(value),
                     onChangePage: (page) => filterManager.changePage(page),
                     onChangeRowsPerPage: (perPage) => filterManager.changeRowsPerPage(perPage),

@@ -150,6 +150,10 @@ const Table = () => {
     const columnCategories = columns[indexColumnCategories];
     const categoriesFilterValue = filterState.extraFilter && filterState.extraFilter.categories;
     (columnCategories.options as any).filterList = categoriesFilterValue ? categoriesFilterValue : [];
+    const serverSideFilterList = columns.map(column => []);
+    if (categoriesFilterValue) {
+        serverSideFilterList[indexColumnCategories] = categoriesFilterValue;
+    }
 
     useEffect(() => {
         let isSubscribed = true;
@@ -234,8 +238,9 @@ const Table = () => {
                 debouncedSearchTime={debouncedSearchTime}
                 ref={tableRef}
                 options={{
+                    serverSideFilterList,
                     serverSide: true,
-                    responsive: "standard",
+                    responsive: "scrollMaxHeight",
                     searchText: filterState.search as any,
                     page: filterState.pagination.page - 1,
                     rowsPerPage: filterState.pagination.per_page,
@@ -244,7 +249,7 @@ const Table = () => {
                     onFilterChange: (column, filterList, type) => {
                         const columnIndex = columns.findIndex(c => c.name === column);
                         filterManager.changeExtraFilter({
-                            [column as any]: filterList[columnIndex].length ? filterList[columnIndex] : null
+                            [column]: columnIndex > 0 && filterList[columnIndex].length ? filterList[columnIndex] : null
                         })
                     },
                     customToolbar: () => (
@@ -252,11 +257,6 @@ const Table = () => {
                             handleClick={() => filterManager.resetFilter()}
                         />
                     ),
-                    sortOrder: {
-                        direction: filterState.order.dir.includes('desc') ? 'desc' : 'asc',
-                        name: filterState.order.sort
-                    
-                    },
                     onSearchChange: (value) => filterManager.changeSearch(value),
                     onChangePage: (page) => filterManager.changePage(page),
                     onChangeRowsPerPage: (perPage) => filterManager.changeRowsPerPage(perPage),

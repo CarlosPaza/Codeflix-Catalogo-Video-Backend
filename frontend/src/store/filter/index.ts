@@ -26,14 +26,14 @@ export const {Types, Creators} = createActions<{
 });
 
 export const INITIAL_STATE: Typings.State = {
-    search: '',
+    search: null,
     pagination: {
         page: 1,
         per_page: 10
     },
     order: {
-        sort: '',
-        dir: ''
+        sort: null,
+        dir: null
     }
 };
 
@@ -88,7 +88,7 @@ function setOrder(state = INITIAL_STATE, action: Typings.SetOrderAction): Typing
             page: 1
         },
         order: {
-            sort: action.payload.sort as any, dir: action.payload.dir as any
+            sort: action.payload.sort, dir: action.payload.dir
         }
     }
 }
